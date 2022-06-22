@@ -3,14 +3,14 @@
 // Declare variables outside of the setup function
 let player;
 let blocks = [];
-let currentLevel = -1;
 let backgroundFunc;
 let changingLevels = false;
 let fading = false;
-
 const fadeIncrement = 15; // for fading in between levels
 
 let keys = []; // array to hold actively pressed keys
+
+let retryLevel;
 
 // constants
 const gravity = 0.4;
@@ -47,6 +47,7 @@ function setup() {
             this.jump = jump || 10.1;
             this.canJump = false;
             this.bouncing = false;
+            this.swimming = false;
         };
 
         draw() {
@@ -62,7 +63,8 @@ function setup() {
                 this.vx += this.speed;
             }
             if ((keys[38] || keys[87]) && this.canJump) { // up (up arrow or W)
-                this.vy -= this.jump / (this.bouncing ? 2 : 1);
+                if (this.swimming) this.vy -= this.speed + gravity;
+                else this.vy -= this.jump / (this.bouncing ? 2 : 1);
             }
             if (keys[40] || keys[83]) { // down (down arrow or S)
                 this.vy += this.speed;
@@ -74,12 +76,16 @@ function setup() {
             if (abs(this.vx) < movementThreshold) this.vx = 0;
             if (abs(this.vy) < movementThreshold) this.vy = 0;
 
-            // Apply collisions and update position
+            // Reset properties before collisions
             this.canJump = false;
+            this.swimming = false;
+            this.bouncing = false;
+
+            // Apply collisions and update position
             this.x += this.vx;
             this.applyCollisions(blocks, this.vx, 0);
 
-            this.bouncing = false;
+           
             this.y += this.vy;
             this.applyCollisions(blocks, 0, this.vy);
             this.jumping = false;
@@ -105,6 +111,18 @@ function setup() {
                     switch (b.constructor.name) {
                         case 'ExitPortal':
                             nextLevel();
+                            break;
+                        case 'FakeBlock':
+                            break;
+                        case 'WaterBlock':
+                            if (vx !== 0) {
+                                this.vx *= 0.3;
+                            }
+                            if (vy !== 0) {
+                                this.vy *= 0.3;
+                            }
+                            this.canJump = true;
+                            this.swimming = true;
                             break;
                         case 'BouncyBlock':
                             if (vx > 0) {
@@ -201,6 +219,18 @@ function setup() {
         }
     }
 
+    class WaterBlock extends Block {
+        constructor(x, y, width, height) {
+            super(x, y, width, height, color(0, 0, 255, 170));
+        }
+    }
+
+    class FakeBlock extends Block {
+        constructor(x, y, width, height) {
+            super(x, y, width, height, color(0, 215));
+        }
+    }
+
     /** 
      * Helper functions
     */
@@ -210,9 +240,10 @@ function setup() {
                p.y + p.s > o.y && p.y < o.y + o.h;
     }
 
+    let currentLevel = -1;
+
     function loadLevel(num) {
         let level = levels[num];
-        console.log(num, level);
         backgroundFunc = level.background;
         let map = level.map;
         blocks = [];
@@ -232,6 +263,8 @@ function setup() {
         }
     }
 
+    retryLevel = () => loadLevel(currentLevel);
+
     // Might add a fade
     async function nextLevel() {
         changingLevels = true;
@@ -250,7 +283,9 @@ function setup() {
         '@': ExitPortal,
         'x': Block,
         'b': BouncyBlock,
-        's': StickyBlock
+        's': StickyBlock,
+        'w': WaterBlock,
+        'f': FakeBlock
     }
 
     let levels = [
@@ -379,6 +414,88 @@ function setup() {
         },
         {
             map: [
+                "w                     x            ",
+                "w                     x            ",
+                "w                     x            ",
+                "w                     x  P         ",
+                "w       bbsssbb       xxxx        x",
+                "w      bwwwwwwwb      @  xwwwwwwwxx",
+                "w      bwwwwwwwb         xwwwwwwwxx",
+                "w      bwwwwwwwb         xwwwwwwwxx",
+                "w      bwwwwwwwb         xwwwwwwwxx",
+                "s       wwwwwwwwwwwwwwwwwwwwwwwwwx ",
+                "w       wwwwwwwwwwwwwwwwwwwwwwwwwx ",
+                "w                     xxxxxxxxxxxx ",
+                "                                   ",
+                "www                                ",
+                "                                   ",
+                "                                   ",
+                "                                   ",
+                "                                   ",
+                "                                   ",
+                "                                   ",
+                "                                   ",
+                "                                   ",
+                "                                   ",
+                "                                   ",
+                "                                   ",
+                "                                   ",
+                "                                   ",
+                "                                   ",
+                "                                   ",
+                "                                   ",
+            ],
+            background: function() {
+                fill(100);
+                text('Swim!', 600, 50);
+                text('Press r to restart :)', 200, 560);
+            }
+        },
+        {
+            map: [
+                "                        f          ",
+                "                                   ",
+                "                        x          ",
+                "             f      xxxxx          ",
+                "       f            x   f          ",
+                "                    x P x          ",
+                "                    xxxxx          ",
+                "                                   ",
+                "fff                                ",
+                "  f                                ",
+                "@ f                                ",
+                "  f                                ",
+                "w                                  ",
+                "                                   ",
+                "w                                  ",
+                "                                   ",
+                "            f                      ",
+                "                    x              ",
+                "              f         f          ",
+                "                              f    ",
+                "                                   ",
+                "                                   ",
+                "                                   ",
+                "s                                  ",
+                "                                   ",
+                "                                   ",
+                "                                   ",
+                "                                   ",
+                "                                   ",
+                "                                   ",
+            ],
+            background: function() {
+                fill(100);
+                text('Sus...', 485, 195);
+                text('R', 180, 570);
+                stroke(100);
+                line(140, 568, 167, 568);
+                line(167, 568, 162, 563);
+                line(167, 568, 162, 573);
+            }
+        },
+        {
+            map: [
                 "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
                 "b                                 b",
                 "b                                 b",
@@ -422,11 +539,12 @@ function setup() {
      */
 
     player = new Player();
-    
+    //currentLevel = 3;
     nextLevel(); // initialise the first level
 
 }
 
+// TODO: Fix this mess, move update() back inline in draw
 function draw() {
     if (changingLevels) {
         if (fading === true) background(255, fadeIncrement); // fade out
@@ -444,18 +562,19 @@ function draw() {
     }
 }
 
-function update() {
+function update() { // need to rename if using p5.sound
     background(255);
-        push();
-        backgroundFunc();
-        pop();
-        
-        player.update(blocks);
-        blocks.forEach(b => b.draw());
+    push();
+    backgroundFunc();
+    pop();
+    
+    player.update(blocks);
+    blocks.forEach(b => b.draw());
 }
 
 keyPressed = function() {
     keys[keyCode] = true;
+    if (key.toLowerCase() === 'r') retryLevel();
 }
 
 keyReleased = function() {
