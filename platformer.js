@@ -4,7 +4,7 @@
 let player;
 let blocks = [];
 let backgroundFunc;
-let changingLevels = false;
+let changingLevels = true;
 let fading = false;
 const fadeIncrement = 15; // for fading in between levels
 
@@ -110,7 +110,10 @@ function setup() {
                 if (collide(this, b)) {
                     switch (b.constructor.name) {
                         case 'ExitPortal':
-                            nextLevel();
+                            if (!changingLevels) {
+                                changingLevels = true;
+                                nextLevel();
+                            }                            
                             break;
                         case 'FakeBlock':
                             break;
@@ -267,7 +270,6 @@ function setup() {
 
     // Might add a fade
     async function nextLevel() {
-        changingLevels = true;
         fading = true;
         await delay(700);
         loadLevel(++currentLevel);
@@ -340,6 +342,43 @@ function setup() {
                 "                                   ",
                 "                                   ",
                 "                                   ",
+                "                                   ",
+                "                                   ",
+                "         x                         ",
+                "                                   ",
+                "                                   ",
+                "   x                               ",
+                "                                   ",
+                "   x                    x          ",
+                "                                   ",
+                "   x                               ",
+                "                                   ",
+                "   x                               ",
+                "                                   ",
+                "   x                          x    ",
+                "                              x    ",
+                "   x                          x   P",
+                "                              xxxxx",
+                "   x                          x   @",
+                "                             xx    ",
+                "   x                          x    ",
+                "                              xx   ",
+                "   x                          x    ",
+                "   x                          x    ",
+                "   xxxxxxxxxxxxxxxxxxxxxxxxxxxx    ",
+                "                                   ",
+                "                                   ",
+                "                                  x",
+            ],
+            background: function() {
+
+            }
+        },
+        {
+            map: [
+                "                                   ",
+                "                                   ",
+                "                                   ",
                 "       @                           ",
                 "                                   ",
                 "                                   ",
@@ -355,11 +394,11 @@ function setup() {
                 "         bbbbb                     ",
                 "                                   ",
                 "                                   ",
-                "   xxxxxxbbbbbb                   P",
+                "   xxxxxxbbbbbb                    ",
                 "                                   ",
                 "                                   ",
                 "                                   ",
-                "                      bb           ",
+                "                      bb          P",
                 "                                   ",
                 "                                xxx",
                 "                                   ",
@@ -487,11 +526,11 @@ function setup() {
             background: function() {
                 fill(100);
                 text('Sus...', 485, 195);
-                text('R', 180, 570);
-                stroke(100);
-                line(140, 568, 167, 568);
-                line(167, 568, 162, 563);
-                line(167, 568, 162, 573);
+                text('R to restart :)', 180, 570);
+                // stroke(100);
+                // line(140, 568, 167, 568);
+                // line(167, 568, 162, 563);
+                // line(167, 568, 162, 573);
             }
         },
         {
@@ -539,7 +578,7 @@ function setup() {
      */
 
     player = new Player();
-    //currentLevel = 3;
+    // currentLevel = 0;
     nextLevel(); // initialise the first level
 
 }
