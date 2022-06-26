@@ -377,18 +377,18 @@ function setup() {
         {
             map: [
                 "                                   ",
+                "    xxxxxxxx                       ",
+                "    x      x                       ",
+                "       @   x                       ",
+                "   bbbbbbbbb                       ",
                 "                                   ",
                 "                                   ",
-                "       @                           ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
+                "             bbbb                  ",
                 "             b                     ",
                 "             b                     ",
                 "             b                     ",
                 "             b                     ",
-                "             b                     ",
+                "   xxxxxxx  xb                     ",
                 "             b                     ",
                 "             b                     ",
                 "         bbbbb                     ",
@@ -578,7 +578,7 @@ function setup() {
      */
 
     player = new Player();
-    // currentLevel = 0;
+    // currentLevel = 1;
     nextLevel(); // initialise the first level
 
 }
