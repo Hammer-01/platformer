@@ -7,10 +7,14 @@ let backgroundFunc;
 let changingLevels = true;
 let fading = false;
 const fadeIncrement = 15; // for fading in between levels
+let time = 0;
+let startTime;
+let timerElement = document.getElementById('time');
 
 let keys = []; // array to hold actively pressed keys
 
 let retryLevel;
+let updateTimer;
 
 // constants
 const gravity = 0.4;
@@ -23,10 +27,6 @@ function setup() {
     noStroke();
     textAlign(CENTER, CENTER);
     textSize(15);
-    
-    /**
-     * Assign variables that were previously declared ouside of setup()
-     */
 
     /**
      * The Player class
@@ -48,6 +48,7 @@ function setup() {
             this.canJump = false;
             this.bouncing = false;
             this.swimming = false;
+            this.health = 20;
         };
 
         draw() {
@@ -147,6 +148,48 @@ function setup() {
                                 this.vy = b.bounciness;
                             }
                             break;
+                        case 'Platform':
+                            if (vy > 0) {
+                                this.y = b.y - this.s;
+                                this.vy = 0;
+                                this.canJump = true;
+                            }
+                            break;
+                        case 'UpSpike':
+                            if (vx > 0) {
+                                this.vx = -b.bounciness;
+                            }
+                            else if (vx < 0) {
+                                this.vx = b.bounciness;
+                            }
+                            if (vy > 0) {
+                                this.vy = -b.bounciness;
+                                this.health -= b.ouch;
+                            }
+                            else if (vy < 0) {
+                                this.y = b.y + b.h;
+                                this.vy = 0;
+                            }
+                            break;
+                        case 'DownSpike':
+                            if (vy > 0) {
+                                this.y = b.y - this.s;
+                                this.vy = 0;
+                                this.canJump = true;
+                            }
+                            break;
+                        case 'LeftSpike':
+                            if (vx < 0) {
+                                this.x = b.x + b.w;
+                                this.vx = 0;
+                            }
+                            break;
+                        case 'RightSpike':
+                            if (vx > 0) {
+                                this.x = b.x - this.s;
+                                this.vx = 0;
+                            }
+                            break;
                         case 'StickyBlock':
                             this.vx = 0;
                             this.vy = 0;
@@ -156,7 +199,7 @@ function setup() {
                             if (vx > 0) {
                                 this.x = b.x - this.s;
                                 this.vx = 0;
-                            } 
+                            }
                             else if (vx < 0) {
                                 this.x = b.x + b.w;
                                 this.vx = 0;
@@ -184,9 +227,9 @@ function setup() {
         constructor(x, y, width, height, colour) {
             this.x = x;
             this.y = y;
-            this.w = width || 20;
-            this.h = height || 20;
-            this.c = colour || color(0);
+            this.w = width ?? 20;
+            this.h = height ?? 20;
+            this.c = colour ?? color(0);
         };
 
         draw() {
@@ -234,6 +277,69 @@ function setup() {
         }
     }
 
+    class Platform extends Block {
+        constructor(x, y, width) {
+            super(x, y, width, 0, color(115, 60, 0));
+        }
+
+        draw() {
+            fill(this.c);
+            rect(this.x, this.y, this.w, 3);
+        }
+    }
+
+    class Spike extends Block {
+        constructor(x, y, width, height, direction) {
+            super(x, y, width, height, color(100));
+            this.d = direction;
+        }
+
+        bounciness = 8;
+        ouch = 1;
+
+        draw() {
+            fill(this.c);
+            switch (this.d) {
+                case 'up':
+                    triangle(this.x, this.y+this.h, this.x+this.w, this.y+this.h, this.x+this.w/2, this.y);
+                    break;
+                case 'down':
+                    triangle(this.x, this.y, this.x+this.w, this.y, this.x+this.w/2, this.y+this.h);
+                    break;
+                case 'left':
+                    triangle(this.x+this.w, this.y, this.x+this.w, this.y+this.h, this.x, this.y+this.h/2);
+                    break;
+                case 'right':
+                    triangle(this.x, this.y, this.x, this.y+this.h, this.x+this.w, this.y+this.h/2);
+                    break;
+            }
+        }
+    }
+
+    class UpSpike extends Spike {
+        constructor(x, y, width, height) {
+            super(x, y, width, height, 'up');
+        }
+    }
+
+    class DownSpike extends Spike {
+        constructor(x, y, width, height) {
+            super(x, y, width, height, 'down');
+        }
+    }
+
+    class LeftSpike extends Spike {
+        constructor(x, y, width, height) {
+            super(x, y, width, height, 'left');
+        }
+    }
+
+    class RightSpike extends Spike {
+        constructor(x, y, width, height) {
+            super(x, y, width, height, 'right');
+        }
+    }
+
     /** 
      * Helper functions
     */
@@ -268,12 +374,25 @@ function setup() {
 
     retryLevel = () => loadLevel(currentLevel);
 
+    updateTimer = () => {
+        if (startTime) {
+            time = (performance.now() - startTime) / 1000;
+            timerElement.textContent = time.toFixed(3);
+        }
+    }
+
     // Might add a fade
     async function nextLevel() {
+        if (currentLevel === levels.length - 2) startTime = false; // stop timer
         fading = true;
         await delay(700);
         loadLevel(++currentLevel);
+        updateLevelNumber(currentLevel + 1);
         fading = 255;
+    }
+
+    function updateLevelNumber(levelNumber) {
+        document.getElementById('level-number').textContent = levelNumber;
     }
 
     async function delay(delay) {
@@ -287,7 +406,12 @@ function setup() {
         'b': BouncyBlock,
         's': StickyBlock,
         'w': WaterBlock,
-        'f': FakeBlock
+        'f': FakeBlock,
+        '-': Platform,
+        '^': UpSpike,
+        'v': DownSpike,
+        '<': LeftSpike,
+        '>': RightSpike
     }
 
     let levels = [
@@ -324,6 +448,38 @@ function setup() {
                 "                                   ",
                 "xxx                                ",
             ],
+            devmap: [
+                "                                   ",
+                "                                   ",
+                "                                   ",
+                "                                   ",
+                "                                   ",
+                "                                   ",
+                "                                   ",
+                "                                   ",
+                "                                   ",
+                "                                   ",
+                "                                   ",
+                "                                   ",
+                "                                   ",
+                "                                   ",
+                "                                   ",
+                "                                   ",
+                "                                   ",
+                "                                   ",
+                "                                  @",
+                "                                   ",
+                "         -----                     ",
+                "                                   ",
+                "  P                   xx           ",
+                "                                   ",
+                "                                   ",
+                "                    ^               ",
+                "             x               v     ",
+                "                                   ",
+                "                                   ",
+                "xxx    <      >         ^         <",
+            ],
             background: function() {
                 fill(100);
                 textSize(30);
@@ -331,10 +487,14 @@ function setup() {
                 textSize(15);
                 text('Use arrow keys or WASD to move', width/2, height/3+50);
                 text('Try to reach this portal\nto move to the next level', 600, 300);
+                text('The timer will start\nwhen you start moving', 250, 40);
                 stroke(100);
                 line(610, 330, 650, 350);
                 line(650, 350, 645, 340);
                 line(650, 350, 640, 353);
+                line(175, 30, 165, 10);
+                line(165, 10, 162, 19);
+                line(165, 10, 174, 13);
             }
         },
         {
@@ -568,6 +728,8 @@ function setup() {
             ],
             background: function() {
                 // TODO: confetti
+                fill(100);
+                text(`You finished all the levels in ${time.toFixed(3)} seconds`, 350, 50);
             }
         }
     ]
@@ -599,6 +761,8 @@ function draw() {
     else {
         update();
     }
+
+    updateTimer();
 }
 
 function update() { // need to rename if using p5.sound
@@ -611,15 +775,16 @@ function update() { // need to rename if using p5.sound
     blocks.forEach(b => b.draw());
 }
 
-keyPressed = function() {
+function keyPressed() {
+    if (!startTime) startTime = performance.now();
+    startTime ||= performance.now();
     keys[keyCode] = true;
     if (key.toLowerCase() === 'r') retryLevel();
 }
 
-keyReleased = function() {
+function keyReleased() {
     keys[keyCode] = false;
 }
-
 
 
 /*
