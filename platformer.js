@@ -4,16 +4,17 @@
 let player;
 let blocks = [];
 let backgroundFunc;
-let changingLevels = true;
+let changingStages = true;
 let fading = false;
-const fadeIncrement = 15; // for fading in between levels
+const fadeIncrement = 15; // for fading in between stages
 let time = 0;
 let startTime;
+let bestTimes;
 let timerElement = document.getElementById('time');
 
 let keys = []; // array to hold actively pressed keys
 
-let retryLevel;
+let retryStage;
 let updateTimer;
 
 // constants
@@ -27,6 +28,10 @@ function setup() {
     noStroke();
     textAlign(CENTER, CENTER);
     textSize(15);
+
+    /**
+     * Player and block classes
+     */
 
     /**
      * The Player class
@@ -111,9 +116,9 @@ function setup() {
                 if (collide(this, b)) {
                     switch (b.constructor.name) {
                         case 'ExitPortal':
-                            if (!changingLevels) {
-                                changingLevels = true;
-                                nextLevel();
+                            if (!changingStages) {
+                                changingStages = true;
+                                nextStage();
                             }                            
                             break;
                         case 'FakeBlock':
@@ -349,10 +354,12 @@ function setup() {
                p.y + p.s > o.y && p.y < o.y + o.h;
     }
 
-    let currentLevel = -1;
 
-    function loadLevel(num) {
-        let level = levels[num];
+    let currentStage = -1;
+    let currentLevel = 0;
+
+    function loadStage(num) {
+        let level = levels[currentLevel][num];
         backgroundFunc = level.background;
         let map = level.map;
         blocks = [];
@@ -372,27 +379,34 @@ function setup() {
         }
     }
 
-    retryLevel = () => loadLevel(currentLevel);
+    retryStage = () => loadStage(currentStage);
 
     updateTimer = () => {
-        if (startTime) {
+        if (startTime && currentStage < levels[currentLevel].length - 1) {
             time = (performance.now() - startTime) / 1000;
             timerElement.textContent = time.toFixed(3);
         }
     }
 
     // Might add a fade
-    async function nextLevel() {
-        if (currentLevel === levels.length - 2) startTime = false; // stop timer
+    async function nextStage() {
+        if (currentStage === levels[currentLevel].length - 2) {
+            startTime = false; // stop timer
+            if (!bestTimes[currentLevel] || time < bestTimes[currentLevel]) {
+                updateTextContent('best-time', time.toFixed(3));
+                bestTimes[currentLevel] = time.toFixed(3);
+                storeItem('bestTimes', bestTimes);
+            }
+        }
         fading = true;
         await delay(700);
-        loadLevel(++currentLevel);
-        updateLevelNumber(currentLevel + 1);
+        loadStage(++currentStage);
+        updateTextContent('stage-number', currentStage + 1);
         fading = 255;
     }
 
-    function updateLevelNumber(levelNumber) {
-        document.getElementById('level-number').textContent = levelNumber;
+    function updateTextContent(id, text) {
+        document.getElementById(id).textContent = text;
     }
 
     async function delay(delay) {
@@ -415,323 +429,325 @@ function setup() {
     }
 
     let levels = [
-        {
-            map: [
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                  @",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "  P                   xx           ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "             x                     ",
-                "                                   ",
-                "                                   ",
-                "xxx                                ",
-            ],
-            devmap: [
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                  @",
-                "                                   ",
-                "         -----                     ",
-                "                                   ",
-                "  P                   xx           ",
-                "                                   ",
-                "                                   ",
-                "                    ^               ",
-                "             x               v     ",
-                "                                   ",
-                "                                   ",
-                "xxx    <      >         ^         <",
-            ],
-            background: function() {
-                fill(100);
-                textSize(30);
-                text('Welcome!', width/2, height/3);
-                textSize(15);
-                text('Use arrow keys or WASD to move', width/2, height/3+50);
-                text('Try to reach this portal\nto move to the next level', 600, 300);
-                text('The timer will start\nwhen you start moving', 250, 40);
-                stroke(100);
-                line(610, 330, 650, 350);
-                line(650, 350, 645, 340);
-                line(650, 350, 640, 353);
-                line(175, 30, 165, 10);
-                line(165, 10, 162, 19);
-                line(165, 10, 174, 13);
-            }
-        },
-        {
-            map: [
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "         x                         ",
-                "                                   ",
-                "                                   ",
-                "   x                               ",
-                "                                   ",
-                "   x                    x          ",
-                "                                   ",
-                "   x                               ",
-                "                                   ",
-                "   x                               ",
-                "                                   ",
-                "   x                          x    ",
-                "                              x    ",
-                "   x                          x   P",
-                "                              xxxxx",
-                "   x                          x   @",
-                "                             xx    ",
-                "   x                          x    ",
-                "                              xx   ",
-                "   x                          x    ",
-                "   x                          x    ",
-                "   xxxxxxxxxxxxxxxxxxxxxxxxxxxx    ",
-                "                                   ",
-                "                                   ",
-                "                                  x",
-            ],
-            background: function() {
+        [
+            {
+                map: [
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                  @",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "  P                   xx           ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "             x                     ",
+                    "                                   ",
+                    "                                   ",
+                    "xxx                                ",
+                ],
+                devmap: [
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                  @",
+                    "                                   ",
+                    "         -----                     ",
+                    "                                   ",
+                    "  P                   xx           ",
+                    "                                   ",
+                    "                                   ",
+                    "                    ^               ",
+                    "             x               v     ",
+                    "                                   ",
+                    "                                   ",
+                    "xxx    <      >         ^         <",
+                ],
+                background: function() {
+                    fill(100);
+                    textSize(30);
+                    text('Welcome!', width/2, height/3);
+                    textSize(15);
+                    text('Use arrow keys or WASD to move', width/2, height/3+50);
+                    text('Try to reach this portal\nto move to the next stage', 600, 300);
+                    text('The timer will start\nwhen you start moving', 250, 40);
+                    stroke(100);
+                    line(610, 330, 650, 350);
+                    line(650, 350, 645, 340);
+                    line(650, 350, 640, 353);
+                    line(175, 30, 165, 10);
+                    line(165, 10, 162, 19);
+                    line(165, 10, 174, 13);
+                }
+            },
+            {
+                map: [
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "         x                         ",
+                    "                                   ",
+                    "                                   ",
+                    "   x                               ",
+                    "                                   ",
+                    "   x                    x          ",
+                    "                                   ",
+                    "   x                               ",
+                    "                                   ",
+                    "   x                               ",
+                    "                                   ",
+                    "   x                          x    ",
+                    "                              x    ",
+                    "   x                          x   P",
+                    "                              xxxxx",
+                    "   x                          x   @",
+                    "                             xx    ",
+                    "   x                          x    ",
+                    "                              xx   ",
+                    "   x                          x    ",
+                    "   x                          x    ",
+                    "   xxxxxxxxxxxxxxxxxxxxxxxxxxxx    ",
+                    "                                   ",
+                    "                                   ",
+                    "                                  x",
+                ],
+                background: function() {
 
+                }
+            },
+            {
+                map: [
+                    "                                   ",
+                    "    xxxxxxxx                       ",
+                    "    x      x                       ",
+                    "       @   x                       ",
+                    "   bbbbbbbbb                       ",
+                    "                                   ",
+                    "                                   ",
+                    "             bbbb                  ",
+                    "             b                     ",
+                    "             b                     ",
+                    "             b                     ",
+                    "             b                     ",
+                    "   xxxxxxx  xb                     ",
+                    "             b                     ",
+                    "             b                     ",
+                    "         bbbbb                     ",
+                    "                                   ",
+                    "                                   ",
+                    "   xxxxxxbbbbbb                    ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                      bb          P",
+                    "                                   ",
+                    "                                xxx",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                ],
+                background: function() {
+                    fill(100);
+                    text('This block is bouncy', 455, 400);                
+                }
+            },
+            {
+                map: [
+                    "                                   ",
+                    "                                   ",
+                    "  bbbbbbbb        s                ",
+                    "        Pb        s      @         ",
+                    "         b        s                ",
+                    "    x    b        s                ",
+                    "  b bbbbbb        s                ",
+                    "  b b                              ",
+                    "  b b                              ",
+                    "  b b                              ",
+                    "  b b                             s",
+                    "  b b                             s",
+                    "  b b                             s",
+                    "  b b                             s",
+                    "  b b                             s",
+                    "  b xxxxxxxx                       ",
+                    "bbb        s                       ",
+                    "           s                       ",
+                    "  ssss     s                       ",
+                    "           s                       ",
+                    "           s                       ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                     s             ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                ],
+                background: function() {
+                    fill(100);
+                    text('This block is sticky', 427, 450);
+                    text('You might need a run up...', 200, 280);
+                }
+            },
+            {
+                map: [
+                    "w                     x            ",
+                    "w                     x            ",
+                    "w                     x            ",
+                    "w                     x  P         ",
+                    "w       bbsssbb       xxxx        x",
+                    "w      bwwwwwwwb      @  xwwwwwwwxx",
+                    "w      bwwwwwwwb         xwwwwwwwxx",
+                    "w      bwwwwwwwb         xwwwwwwwxx",
+                    "w      bwwwwwwwb         xwwwwwwwxx",
+                    "s       wwwwwwwwwwwwwwwwwwwwwwwwwx ",
+                    "w       wwwwwwwwwwwwwwwwwwwwwwwwwx ",
+                    "w                     xxxxxxxxxxxx ",
+                    "                                   ",
+                    "www                                ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                ],
+                background: function() {
+                    fill(100);
+                    text('Swim!', 600, 50);
+                    text('Press r to restart :)', 200, 560);
+                }
+            },
+            {
+                map: [
+                    "                        f          ",
+                    "                                   ",
+                    "                        x          ",
+                    "             f      xxxxx          ",
+                    "       f            x   f          ",
+                    "                    x P x          ",
+                    "                    xxxxx          ",
+                    "                                   ",
+                    "fff                                ",
+                    "  f                                ",
+                    "@ f                                ",
+                    "  f                                ",
+                    "w                                  ",
+                    "                                   ",
+                    "w                                  ",
+                    "                                   ",
+                    "            f                      ",
+                    "                    x              ",
+                    "              f         f          ",
+                    "                              f    ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "s                                  ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                    "                                   ",
+                ],
+                background: function() {
+                    fill(100);
+                    text('Sus...', 485, 195);
+                    text('R to restart :)', 180, 570);
+                    // stroke(100);
+                    // line(140, 568, 167, 568);
+                    // line(167, 568, 162, 563);
+                    // line(167, 568, 162, 573);
+                }
+            },
+            {
+                map: [
+                    "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                    "b                                 b",
+                    "b                                 b",
+                    "b                                 b",
+                    "b                P                b",
+                    "b                                 b",
+                    "b                                 b",
+                    "b                                 b",
+                    "b     x   x     xx     x     x    b",
+                    "b     x   x    x  x    x     x    b",
+                    "b      x x    x    x   x     x    b",
+                    "b       x     x    x   x     x    b",
+                    "b       x      x  x     x   x     b",
+                    "b       x       xx       xxx      b",
+                    "b                                 b",
+                    "b                                 b",
+                    "b                                 b",
+                    "b     x       x  xxx  x   x  x    b",
+                    "b     x       x   x   xx  x  x    b",
+                    "b      x  x  x    x   x x x  x    b",
+                    "b      x x x x    x   x  xx       b",
+                    "b       x   x    xxx  x   x  x    b",
+                    "b                                 b",
+                    "b                                 b",
+                    "b                                 b",
+                    "b                                 b",
+                    "b                                 b",
+                    "b                                 b",
+                    "b                                 b",
+                    "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                ],
+                background: function() {
+                    // TODO: confetti
+                    fill(100);
+                    text(`You finished all the stages in ${time.toFixed(3)} seconds`, 350, 50);
+                }
             }
-        },
-        {
-            map: [
-                "                                   ",
-                "    xxxxxxxx                       ",
-                "    x      x                       ",
-                "       @   x                       ",
-                "   bbbbbbbbb                       ",
-                "                                   ",
-                "                                   ",
-                "             bbbb                  ",
-                "             b                     ",
-                "             b                     ",
-                "             b                     ",
-                "             b                     ",
-                "   xxxxxxx  xb                     ",
-                "             b                     ",
-                "             b                     ",
-                "         bbbbb                     ",
-                "                                   ",
-                "                                   ",
-                "   xxxxxxbbbbbb                    ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                      bb          P",
-                "                                   ",
-                "                                xxx",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-            ],
-            background: function() {
-                fill(100);
-                text('This block is bouncy', 455, 400);                
-            }
-        },
-        {
-            map: [
-                "                                   ",
-                "                                   ",
-                "  bbbbbbbb        s                ",
-                "        Pb        s      @         ",
-                "         b        s                ",
-                "    x    b        s                ",
-                "  b bbbbbb        s                ",
-                "  b b                              ",
-                "  b b                              ",
-                "  b b                              ",
-                "  b b                             s",
-                "  b b                             s",
-                "  b b                             s",
-                "  b b                             s",
-                "  b b                             s",
-                "  b xxxxxxxx                       ",
-                "bbb        s                       ",
-                "           s                       ",
-                "  ssss     s                       ",
-                "           s                       ",
-                "           s                       ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                     s             ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-            ],
-            background: function() {
-                fill(100);
-                text('This block is sticky', 427, 450);
-                text('You might need a run up...', 200, 280);
-            }
-        },
-        {
-            map: [
-                "w                     x            ",
-                "w                     x            ",
-                "w                     x            ",
-                "w                     x  P         ",
-                "w       bbsssbb       xxxx        x",
-                "w      bwwwwwwwb      @  xwwwwwwwxx",
-                "w      bwwwwwwwb         xwwwwwwwxx",
-                "w      bwwwwwwwb         xwwwwwwwxx",
-                "w      bwwwwwwwb         xwwwwwwwxx",
-                "s       wwwwwwwwwwwwwwwwwwwwwwwwwx ",
-                "w       wwwwwwwwwwwwwwwwwwwwwwwwwx ",
-                "w                     xxxxxxxxxxxx ",
-                "                                   ",
-                "www                                ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-            ],
-            background: function() {
-                fill(100);
-                text('Swim!', 600, 50);
-                text('Press r to restart :)', 200, 560);
-            }
-        },
-        {
-            map: [
-                "                        f          ",
-                "                                   ",
-                "                        x          ",
-                "             f      xxxxx          ",
-                "       f            x   f          ",
-                "                    x P x          ",
-                "                    xxxxx          ",
-                "                                   ",
-                "fff                                ",
-                "  f                                ",
-                "@ f                                ",
-                "  f                                ",
-                "w                                  ",
-                "                                   ",
-                "w                                  ",
-                "                                   ",
-                "            f                      ",
-                "                    x              ",
-                "              f         f          ",
-                "                              f    ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "s                                  ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-                "                                   ",
-            ],
-            background: function() {
-                fill(100);
-                text('Sus...', 485, 195);
-                text('R to restart :)', 180, 570);
-                // stroke(100);
-                // line(140, 568, 167, 568);
-                // line(167, 568, 162, 563);
-                // line(167, 568, 162, 573);
-            }
-        },
-        {
-            map: [
-                "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-                "b                                 b",
-                "b                                 b",
-                "b                                 b",
-                "b                P                b",
-                "b                                 b",
-                "b                                 b",
-                "b                                 b",
-                "b     x   x     xx     x     x    b",
-                "b     x   x    x  x    x     x    b",
-                "b      x x    x    x   x     x    b",
-                "b       x     x    x   x     x    b",
-                "b       x      x  x     x   x     b",
-                "b       x       xx       xxx      b",
-                "b                                 b",
-                "b                                 b",
-                "b                                 b",
-                "b     x       x  xxx  x   x  x    b",
-                "b     x       x   x   xx  x  x    b",
-                "b      x  x  x    x   x x x  x    b",
-                "b      x x x x    x   x  xx       b",
-                "b       x   x    xxx  x   x  x    b",
-                "b                                 b",
-                "b                                 b",
-                "b                                 b",
-                "b                                 b",
-                "b                                 b",
-                "b                                 b",
-                "b                                 b",
-                "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-            ],
-            background: function() {
-                // TODO: confetti
-                fill(100);
-                text(`You finished all the levels in ${time.toFixed(3)} seconds`, 350, 50);
-            }
-        }
+        ]
     ]
 
 
@@ -739,15 +755,18 @@ function setup() {
      * Main code body
      */
 
+    bestTimes = getItem('bestTimes') || [];
+    if (bestTimes[0]) updateTextContent('best-time', bestTimes[0]);
+
     player = new Player();
-    // currentLevel = 1;
-    nextLevel(); // initialise the first level
+    // currentStage = 1;
+    nextStage(); // initialise the first stage
 
 }
 
 // TODO: Fix this mess, move update() back inline in draw
 function draw() {
-    if (changingLevels) {
+    if (changingStages) {
         if (fading === true) background(255, fadeIncrement); // fade out
         else if (fading > 0) {
             update();
@@ -755,7 +774,7 @@ function draw() {
         }
         else {
             fading = 0;
-            changingLevels = false;
+            changingStages = false;
         }
     }
     else {
@@ -779,7 +798,7 @@ function keyPressed() {
     if (!startTime) startTime = performance.now();
     startTime ||= performance.now();
     keys[keyCode] = true;
-    if (key.toLowerCase() === 'r') retryLevel();
+    if (key.toLowerCase() === 'r') retryStage();
 }
 
 function keyReleased() {
